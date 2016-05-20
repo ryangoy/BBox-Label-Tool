@@ -13,14 +13,24 @@ from PIL import Image, ImageTk
 import os
 import glob
 import random
+import sys
+from xml.etree.ElementTree import Element, SubElement, Comment, tostring
+from xml.etree import ElementTree
+from xml.dom import minidom
+
 
 # colors for the bboxes
 COLORS = ['red', 'blue', 'yellow', 'pink', 'cyan', 'green', 'black']
 # image sizes for the examples
-SIZE = 256, 256
+SIZE = 200,200
 
 class LabelTool():
-    def __init__(self, master):
+    def __init__(self, master, folder_name, database_name):
+
+        # parameters for imdb xml file
+        self.folder_name = folder_name
+        self.database_name = database_name
+
         # set up the main frame
         self.parent = master
         self.parent.title("LabelTool")
@@ -131,7 +141,7 @@ class LabelTool():
 ##            return
         # get image list
         self.imageDir = os.path.join(r'./Images', '%03d' %(self.category))
-        self.imageList = glob.glob(os.path.join(self.imageDir, '*.JPEG'))
+        self.imageList = glob.glob(os.path.join(self.imageDir, '*.jpg'))
         if len(self.imageList) == 0:
             print 'No .JPEG images found in the specified dir!'
             return
@@ -175,36 +185,101 @@ class LabelTool():
         self.mainPanel.create_image(0, 0, image = self.tkimg, anchor=NW)
         self.progLabel.config(text = "%04d/%04d" %(self.cur, self.total))
 
-        # load labels
-        self.clearBBox()
+
         self.imagename = os.path.split(imagepath)[-1].split('.')[0]
-        labelname = self.imagename + '.txt'
-        self.labelfilename = os.path.join(self.outDir, labelname)
-        bbox_cnt = 0
-        if os.path.exists(self.labelfilename):
-            with open(self.labelfilename) as f:
-                for (i, line) in enumerate(f):
-                    if i == 0:
-                        bbox_cnt = int(line.strip())
-                        continue
-                    tmp = [int(t.strip()) for t in line.split()]
-##                    print tmp
-                    self.bboxList.append(tuple(tmp))
-                    tmpId = self.mainPanel.create_rectangle(tmp[0], tmp[1], \
-                                                            tmp[2], tmp[3], \
-                                                            width = 2, \
-                                                            outline = COLORS[(len(self.bboxList)-1) % len(COLORS)])
-                    self.bboxIdList.append(tmpId)
-                    self.listbox.insert(END, '(%d, %d) -> (%d, %d)' %(tmp[0], tmp[1], tmp[2], tmp[3]))
-                    self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[(len(self.bboxIdList) - 1) % len(COLORS)])
+        self.clearBBox()
+#         # load labels
+#         self.clearBBox()
+#         self.imagename = os.path.split(imagepath)[-1].split('.')[0]
+#         labelname = self.imagename + '.txt'
+#         self.labelfilename = os.path.join(self.outDir, labelname)
+#         bbox_cnt = 0
+#         if os.path.exists(self.labelfilename):
+#             with open(self.labelfilename) as f:
+#                 for (i, line) in enumerate(f):
+#                     if i == 0:
+#                         bbox_cnt = int(line.strip())
+#                         continue
+#                     tmp = [int(t.strip()) for t in line.split()]
+# ##                    print tmp
+#                     self.bboxList.append(tuple(tmp))
+#                     tmpId = self.mainPanel.create_rectangle(tmp[0], tmp[1], \
+#                                                             tmp[2], tmp[3], \
+#                                                             width = 2, \
+#                                                             outline = COLORS[(len(self.bboxList)-1) % len(COLORS)])
+#                     self.bboxIdList.append(tmpId)
+#                     self.listbox.insert(END, '(%d, %d) -> (%d, %d)' %(tmp[0], tmp[1], tmp[2], tmp[3]))
+#                     self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[(len(self.bboxIdList) - 1) % len(COLORS)])
 
+    # output as xml
     def saveImage(self):
-        with open(self.labelfilename, 'w') as f:
-            f.write('%d\n' %len(self.bboxList))
-            for bbox in self.bboxList:
-                f.write(' '.join(map(str, bbox)) + '\n')
-        print 'Image No. %d saved' %(self.cur)
+        annotation = Element('annotation')
+        
+        folder = SubElement(annotation, 'folder')
+        folder.text = self.folder_name
 
+        filename = SubElement(annotation, 'filename')
+        filename.text = self.imagename
+
+        source = SubElement(annotation, 'source')
+        database = SubElement(source, 'database')
+        database.text = self.database_name
+
+        size = SubElement(annotation, 'size')
+        width = SubElement(size, 'width')
+        width.text = '1800'
+        height = SubElement(size, 'height')
+        height.text = str(SIZE[1])
+        depth = SubElement(size, 'depth')
+        height.text = '1800'
+
+        segmented = SubElement(annotation, 'segmented')
+        segmented.text = '0'
+
+        obj = SubElement(annotation, 'object')
+        name = SubElement(obj, 'name')
+        name.text = self.imagename
+        pose = SubElement(obj, 'pose')
+        pose.text = 'Unspecified'
+        truncated = SubElement(obj, 'truncated')
+        truncated.text = '0'
+        difficult = SubElement(obj, 'difficult')
+        difficult.text = '0'
+        
+        for bbox in self.bboxList:
+            bndbox = SubElement(obj, 'bndbox')
+            xmin = SubElement(bndbox, 'xmin')
+            xmin.text = str(bbox[0])
+            ymin = SubElement(bndbox, 'ymin')
+            ymin.text = str(bbox[1])
+            xmax = SubElement(bndbox, 'xmax')
+            xmax.text = str(bbox[2])
+            ymax = SubElement(bndbox, 'ymax')
+            ymax.text = str(bbox[3])
+        output = self.prettify(annotation)
+
+
+        if not os.path.exists(os.path.join('./Labels', self.folder_name)):
+            os.makedirs(os.path.join('./Labels', self.folder_name))
+
+        save_name = os.path.join('./Labels', self.folder_name, self.imagename + '.xml')
+        with open(save_name, 'w') as f:
+            f.write(output[output.index('\n')+1:])
+
+    # #previous code
+    # def saveImage(self):
+    #     with open(self.labelfilename, 'w') as f:
+    #         f.write('%d\n' %len(self.bboxList))
+    #         for bbox in self.bboxList:
+    #             f.write(' '.join(map(str, bbox)) + '\n')
+    #     print 'Image No. %d saved' %(self.cur)
+
+    def prettify(self, elem):
+        """Return a pretty-printed XML string
+        """
+        rough_string = tostring(elem, 'utf-8')
+        reparsed = minidom.parseString(rough_string)
+        return reparsed.toprettyxml(indent="\t")
 
     def mouseClick(self, event):
         if self.STATE['click'] == 0:
@@ -287,6 +362,11 @@ class LabelTool():
 ##        self.mainPanel.create_image(0, 0, image = self.tkimg, anchor=NW)
 
 if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        print '2 arguments required:'
+        print 'python main.py [folder_name] [database_name]'
+    folder_name = sys.argv[1]
+    database_name = sys.argv[2]
     root = Tk()
-    tool = LabelTool(root)
+    tool = LabelTool(root, folder_name, database_name)
     root.mainloop()
