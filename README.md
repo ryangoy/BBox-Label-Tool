@@ -1,3 +1,5 @@
+Fork to output the labels as XML formatted files for conversion to imdb format.
+
 BBox-Label-Tool
 ===============
 
