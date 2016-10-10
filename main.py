@@ -227,26 +227,26 @@ class LabelTool():
 
         size = SubElement(annotation, 'size')
         width = SubElement(size, 'width')
-        width.text = '1800'
+        width.text = '640'
         height = SubElement(size, 'height')
-        height.text = str(SIZE[1])
+        height.text = '640'
         depth = SubElement(size, 'depth')
-        height.text = '1800'
+        depth.text = '3'
 
         segmented = SubElement(annotation, 'segmented')
         segmented.text = '0'
-
-        obj = SubElement(annotation, 'object')
-        name = SubElement(obj, 'name')
-        name.text = self.imagename
-        pose = SubElement(obj, 'pose')
-        pose.text = 'Unspecified'
-        truncated = SubElement(obj, 'truncated')
-        truncated.text = '0'
-        difficult = SubElement(obj, 'difficult')
-        difficult.text = '0'
         
-        for bbox in self.bboxList:
+	for bbox in self.bboxList:
+            obj = SubElement(annotation, 'object')
+            name = SubElement(obj, 'name')
+            name.text = 'electric_panel'
+            pose = SubElement(obj, 'pose')
+            pose.text = 'Unspecified'
+            truncated = SubElement(obj, 'truncated')
+            truncated.text = '0'
+            difficult = SubElement(obj, 'difficult')
+            difficult.text = '0'
+        
             bndbox = SubElement(obj, 'bndbox')
             xmin = SubElement(bndbox, 'xmin')
             xmin.text = str(bbox[0])
