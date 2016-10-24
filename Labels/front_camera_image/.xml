@@ -2,18 +2,12 @@
 	<folder>front_camera_image</folder>
 	<filename/>
 	<source>
-		<database>UIC_dataset</database>
+		<database>UIC</database>
 	</source>
 	<size>
-		<width>1800</width>
-		<height>1800</height>
+		<width>256</width>
+		<height>256</height>
 		<depth/>
 	</size>
 	<segmented>0</segmented>
-	<object>
-		<name/>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-	</object>
 </annotation>

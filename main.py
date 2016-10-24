@@ -25,7 +25,7 @@ COLORS = ['red', 'blue', 'yellow', 'pink', 'cyan', 'green', 'black']
 SIZE = 200,200
 
 class LabelTool():
-    def __init__(self, master, folder_name, database_name):
+    def __init__(self, master, folder_name, database_name, object_name, image_width, image_height):
 
         # parameters for imdb xml file
         self.folder_name = folder_name
@@ -227,9 +227,9 @@ class LabelTool():
 
         size = SubElement(annotation, 'size')
         width = SubElement(size, 'width')
-        width.text = '640'
+        width.text = image_width
         height = SubElement(size, 'height')
-        height.text = '640'
+        height.text = image_height
         depth = SubElement(size, 'depth')
         depth.text = '3'
 
@@ -239,7 +239,7 @@ class LabelTool():
 	for bbox in self.bboxList:
             obj = SubElement(annotation, 'object')
             name = SubElement(obj, 'name')
-            name.text = 'electric_panel'
+            name.text = object_name
             pose = SubElement(obj, 'pose')
             pose.text = 'Unspecified'
             truncated = SubElement(obj, 'truncated')
@@ -362,11 +362,14 @@ class LabelTool():
 ##        self.mainPanel.create_image(0, 0, image = self.tkimg, anchor=NW)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print '2 arguments required:'
-        print 'python main.py [folder_name] [database_name]'
+    if len(sys.argv) < 6:
+        print '5 arguments required:'
+        print '\tpython main.py [folder_name] [database_name] [object_name] [image_width] [image_height]'
+	sys.exit()	
     folder_name = sys.argv[1]
     database_name = sys.argv[2]
+    object_name = sys.argv[3]
+
     root = Tk()
-    tool = LabelTool(root, folder_name, database_name)
+    tool = LabelTool(root, folder_name, database_name, object_name, image_width, image_height)
     root.mainloop()
